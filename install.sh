@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# lit-corporate installer (macOS / Linux)
+# lit-corp-claude-tmp installer (macOS / Linux)
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/<org>/lit-corporate/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/<org>/lit-corp-claude-tmp/main/install.sh | bash
 #
 # このスクリプトは未導入の場合に以下を自動インストールします:
 #   - Homebrew (sudo パスワード入力を求められます。Mac のログインパスワードを入力してください)
@@ -9,11 +9,11 @@
 #   - git (brew 経由)
 set -euo pipefail
 
-REPO_URL="${LIT_CORPORATE_REPO:-https://github.com/lifeistech/lit-corporate.git}"
-BRANCH="${LIT_CORPORATE_BRANCH:-main}"
-TARGET_DIR="${LIT_CORPORATE_DIR:-$HOME/lit-corporate}"
+REPO_URL="${LIT_CORP_CLAUDE_TMP_REPO:-https://github.com/lifeistech/lit-corp-claude-tmp.git}"
+BRANCH="${LIT_CORP_CLAUDE_TMP_BRANCH:-main}"
+TARGET_DIR="${LIT_CORP_CLAUDE_TMP_DIR:-$PWD/lit-corp-claude-tmp}"
 
-cecho() { printf "\033[1;36m[lit-corporate]\033[0m %s\n" "$*"; }
+cecho() { printf "\033[1;36m[lit-corp-claude-tmp]\033[0m %s\n" "$*"; }
 warn()  { printf "\033[1;33m[warn]\033[0m %s\n" "$*"; }
 err()   { printf "\033[1;31m[error]\033[0m %s\n" "$*" >&2; }
 

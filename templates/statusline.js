@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// lit-corporate statusline
+// lit-corp-claude-tmp statusline
 // stdin で Claude Code から JSON を受け取り、2 行のステータスを stdout に出力する。
 //
 // 1 行目: [ModelName] 5h: ▓▓▓░░░░░░░ 30% | Reset: 18:00 JST   (rate_limits がある場合)

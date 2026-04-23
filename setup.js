@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// lit-corporate interactive setup
+// lit-corp-claude-tmp interactive setup
 // テンプレート（templates/）から選択した部門の .claude/ 設定一式を target に展開する。
 //
 // 使い方:
@@ -53,7 +53,7 @@ function parseArgs(argv) {
 }
 
 function printHelp() {
-  console.log(`lit-corporate setup
+  console.log(`lit-corp-claude-tmp setup
 
 使い方:
   node setup.js                                対話モード
@@ -202,11 +202,11 @@ function writeGitignore(targetDir) {
   const dst = path.join(targetDir, '.gitignore');
   if (fs.existsSync(dst)) {
     const existing = fs.readFileSync(dst, 'utf8');
-    if (existing.includes('lit-corporate — 機密ファイル除外リスト')) {
+    if (existing.includes('lit-corp-claude-tmp — 機密ファイル除外リスト')) {
       console.log('  · .gitignore: 既にテンプレ済み、スキップ');
       return;
     }
-    fs.writeFileSync(dst, existing + '\n\n# --- lit-corporate 追記 ---\n' + tmpl);
+    fs.writeFileSync(dst, existing + '\n\n# --- lit-corp-claude-tmp 追記 ---\n' + tmpl);
     console.log('  · .gitignore: 既存ファイルに追記');
   } else {
     writeFile(dst, tmpl);
@@ -228,7 +228,7 @@ async function main() {
   const args = parseArgs(process.argv.slice(2));
   if (args.help) { printHelp(); return; }
 
-  console.log('\n== lit-corporate セットアップ ==\n');
+  console.log('\n== lit-corp-claude-tmp セットアップ ==\n');
 
   let targetDir, depts, model, includeCommands, includeGitignore;
 

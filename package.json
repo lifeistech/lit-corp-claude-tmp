@@ -1,5 +1,5 @@
 {
-  "name": "lit-corporate",
+  "name": "lit-corp-claude-tmp",
   "version": "0.1.0",
   "description": "Corporate back-office setup template for Claude Code (Mac/Windows)",
   "private": true,
@@ -7,7 +7,7 @@
     "node": ">=18"
   },
   "bin": {
-    "lit-corporate-setup": "./setup.js"
+    "lit-corp-claude-tmp-setup": "./setup.js"
   },
   "scripts": {
     "setup": "node setup.js",

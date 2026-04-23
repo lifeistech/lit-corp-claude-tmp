@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// lit-corporate UserPromptSubmit hook
+// lit-corp-claude-tmp UserPromptSubmit hook
 // Claude Code から stdin で受け取る JSON の prompt フィールドに
 // APIキー・パスワード等の機密パターンが含まれていたら exit 2 でブロックする。
 

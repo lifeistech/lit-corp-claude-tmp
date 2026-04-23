@@ -1,16 +1,16 @@
-# lit-corporate installer (Windows / PowerShell)
+# lit-corp-claude-tmp installer (Windows / PowerShell)
 # Usage:
-#   iwr -useb https://raw.githubusercontent.com/<org>/lit-corporate/main/install.ps1 | iex
+#   iwr -useb https://raw.githubusercontent.com/<org>/lit-corp-claude-tmp/main/install.ps1 | iex
 #
 # このスクリプトは未導入の場合に winget 経由で Node.js LTS / Git を自動インストールします。
 # UAC プロンプトが出た場合は許可してください。
 $ErrorActionPreference = 'Stop'
 
-$RepoUrl   = if ($env:LIT_CORPORATE_REPO)   { $env:LIT_CORPORATE_REPO }   else { 'https://github.com/lifeistech/lit-corporate.git' }
-$Branch    = if ($env:LIT_CORPORATE_BRANCH) { $env:LIT_CORPORATE_BRANCH } else { 'main' }
-$TargetDir = if ($env:LIT_CORPORATE_DIR)    { $env:LIT_CORPORATE_DIR }    else { Join-Path $HOME 'lit-corporate' }
+$RepoUrl   = if ($env:LIT_CORP_CLAUDE_TMP_REPO)   { $env:LIT_CORP_CLAUDE_TMP_REPO }   else { 'https://github.com/lifeistech/lit-corp-claude-tmp.git' }
+$Branch    = if ($env:LIT_CORP_CLAUDE_TMP_BRANCH) { $env:LIT_CORP_CLAUDE_TMP_BRANCH } else { 'main' }
+$TargetDir = if ($env:LIT_CORP_CLAUDE_TMP_DIR)    { $env:LIT_CORP_CLAUDE_TMP_DIR }    else { Join-Path $PWD.Path 'lit-corp-claude-tmp' }
 
-function Write-Info($msg) { Write-Host "[lit-corporate] $msg" -ForegroundColor Cyan }
+function Write-Info($msg) { Write-Host "[lit-corp-claude-tmp] $msg" -ForegroundColor Cyan }
 function Write-Warn($msg) { Write-Host "[warn] $msg" -ForegroundColor Yellow }
 function Write-Err ($msg) { Write-Host "[error] $msg" -ForegroundColor Red }
 
