@@ -9,6 +9,14 @@
 #   - git (brew 経由)
 set -euo pipefail
 
+# `curl -fsSL URL | bash` で呼ばれた場合、stdin は curl の pipe で占有されていて
+# 対話プロンプト（sudo パスワード、setup.js の部門選択など）が入力を受け取れない。
+# stdin が tty でなく /dev/tty が読めるなら、このスクリプト全体の stdin を tty に
+# 切り替える。CI やコンテナで tty が無い場合はそのまま（非対話フラグで対処）。
+if [ ! -t 0 ] && [ -r /dev/tty ]; then
+  exec 0</dev/tty
+fi
+
 REPO_URL="${LIT_CORP_CLAUDE_TMP_REPO:-https://github.com/lifeistech/lit-corp-claude-tmp.git}"
 BRANCH="${LIT_CORP_CLAUDE_TMP_BRANCH:-main}"
 TARGET_DIR="${LIT_CORP_CLAUDE_TMP_DIR:-$PWD/lit-corp-claude-tmp}"
