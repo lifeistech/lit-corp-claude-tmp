@@ -1,0 +1,44 @@
+# lit-corporate — 機密ファイル除外リスト
+# 編集する際は機密情報の意図しないコミットが起きないよう慎重に
+
+# 環境変数・シークレット
+.env
+.env.*
+!.env.example
+secrets
+secrets.*
+credentials
+credentials.*
+
+# 証明書・鍵
+*.pem
+*.key
+*.p8
+*.p12
+*.pfx
+id_rsa
+id_rsa.*
+id_ed25519
+id_ed25519.*
+
+# Claude Code のローカル設定（ユーザー個別、共有しない）
+.claude/settings.local.json
+.claude/logs/
+.claude/cache/
+
+# OS / エディタ
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# Node
+node_modules/
+npm-debug.log*
+
+# 一時ファイル
+*.tmp
+*.bak
+*~
