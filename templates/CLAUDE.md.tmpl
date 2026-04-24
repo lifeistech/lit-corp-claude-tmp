@@ -26,50 +26,66 @@ Onboarding が未完のうちは下の `初回 Onboarding` セクションの手
 
 **ユーザーへの質問はすべて `AskUserQuestion` ツールを使って構造化 UI で提示してください**。自由記述が必要な項目は選択肢に「その他（自由記述）」を含める。複数項目は 1 回の呼び出しで `questions` 配列にまとめる。
 
-### 構成の考え方（解釈 A: 1 インストール = 1 部門）
+### 構成の考え方（解釈 A: 1 インストール = 1 部門、二層構成）
 
-- ルート `CLAUDE.md` は **単一部門の AI オーケストレーター** になる（例: 「経理 AI オーケストレーター」）
-- 聞き取った定型業務 1 件ごとに **機能担当サブエージェント** を `.claude/agents/<task-id>.md` として作成する
-- 階層: `部門ルート（CLAUDE.md） → 機能サブエージェント（.claude/agents/<task>.md）`
+```
+ユーザー
+  ↓
+ルート CLAUDE.md （部門 AI オーケストレーター）
+  ↓ 自動ルーティング（.claude/agents/<id>.md の description を参照）
+  ├── .claude/agents/<id-1>.md  →  <日本語ディレクトリ-1>/CLAUDE.md
+  ├── .claude/agents/<id-2>.md  →  <日本語ディレクトリ-2>/CLAUDE.md
+  └── ...
+```
+
+- ルート `CLAUDE.md` は部門オーケストレーターで、委任ルールと基本/禁止ルールを保持する
+- `.claude/agents/<id>.md` は **ルーティング用の短い定義**。frontmatter の `description` でオーケストレーターが自動委任、本文は担当ディレクトリの `<日本語ディレクトリ>/CLAUDE.md` を必ず読んでから作業する旨を指示する
+- `<日本語ディレクトリ>/CLAUDE.md` は **詳細な運用ルール**（扱うファイル、定型手順、禁止事項、出力フォーマット等）。サブエージェントがそのディレクトリで作業すると Claude Code が自動でコンテキストに読み込む
+- ディレクトリ名は日本語（例: `ID管理/`, `端末管理/`）。`.claude/agents/` 側の id は英小文字ハイフンで安全に保つ
 
 ### 手順
 
 1. **部門を 1 つ選ぶ**（AskUserQuestion 単一選択）
-   - 候補: 経理 (accounting) / 労務 (labor) / 総務 (general-affairs) / 人事 (hr) / 採用 (recruit) / その他
-   - 「その他」選択時は、追加質問で `id`（英小文字ハイフン）と表示名を聞き取る
+   - 候補: 経理 / 労務 / 総務 / 人事 / 採用 / 情シス / その他
+   - 英語 id（`accounting` / `labor` / `general-affairs` / `hr` / `recruit` / `it` / 自由入力）と、画面表示用の日本語名を確定
 2. **部門コンテキストをヒアリング**（AskUserQuestion で 1 セットにまとめる）
-   - 扱う代表的なファイル・フォルダ構成（例: `expenses/YYYY-MM/*.csv`）
+   - 扱う代表的なファイル・フォルダ構成
    - 絶対にやってはいけない / 社内ルールで禁止されている操作
    - 利用している社内システム・ツール（なければ「なし」）
    - 希望の出力フォーマット
-3. **定型業務（機能サブエージェント化するもの）を 3〜5 件洗い出す**
-   - AskUserQuestion で候補リストを提示しつつ「その他（自由記述）」で任意追加可
-   - 既定5部門は `templates/agents/<id>.md` の雛形を参考に候補を提示できる
-4. **各定型業務について詳細を聞き取る**（業務ごとに 1 回 AskUserQuestion）
-   - 機能 id（英小文字ハイフン。例: `monthly-expense`）
-   - 担当する業務内容の要約（1〜2 行）
+3. **機能サブエージェント（担当領域）を 3〜8 件洗い出す**
+   - AskUserQuestion で候補リストを提示（例: 情シス部門なら「ID管理」「端末管理」「インシデント管理」等）+「その他（自由記述）」で任意追加可
+   - 既定5部門（経理/労務/総務/人事/採用）は `templates/agents/<id>.md` の内容を参考に候補を提示してよい
+4. **各機能について詳細を聞き取る**（機能ごとに 1 回 AskUserQuestion）
+   - 英語 id（ファイル名用、英小文字ハイフン。例: `id-management`）
+   - 日本語表示名（ディレクトリ名にもなる。例: `ID管理`）
+   - 担当する業務内容の要約（1〜2 行。オーケストレーターの description に使う）
    - 扱うファイル・入力
    - 出力物・フォーマット
    - 手順のツボ・禁止事項
 5. `ExitPlanMode` で最終プランを提示しユーザーの承認を得る
 6. 承認後に実施する書き込み:
-   - **ルート `CLAUDE.md` を全面書き換え**（テンプレ: 下記「Onboarding 完了後の CLAUDE.md ひな形」）
-     - タイトルを `# <部門名> AI オーケストレーター` に変更
-     - 「基本ルール」「禁止モード」セクションは維持（文言ほぼそのまま流用）
-     - 委任ルール（delegation rules）に各機能サブエージェントを列挙
-     - `<!-- BEGIN:ONBOARDING -->` から `<!-- END:ONBOARDING -->` までは削除
-   - **機能サブエージェントを `.claude/agents/<task-id>.md` として作成**
-     - frontmatter: `name` / `description` / `tools`（必要最小限）/ **`model: sonnet` 固定**
-     - system prompt 本文は 4 で聞き取った内容を整形
-   - **`.claude/.onboarding.json` を更新**: `status: "completed"`, `completedAt`（ISO8601）, `department: "<id>"`, `tasks: ["<task-id>", ...]`
+   - **ルート `CLAUDE.md` を全面書き換え**（下記「Onboarding 完了後のルート CLAUDE.md ひな形」）
+     - タイトル `# <部門名> AI オーケストレーター`
+     - 委任ルールに機能サブエージェントを列挙（日本語名・id・担当ディレクトリ・1 行サマリ）
+     - 「基本ルール」「禁止モード」はそのまま維持
+     - `<!-- BEGIN:ONBOARDING -->` 〜 `<!-- END:ONBOARDING -->` を削除
+   - **各機能サブエージェントを作成（2 ファイル/機能）**
+     1. `.claude/agents/<id>.md`（ルーティング定義）
+        - frontmatter: `name: <id>` / `description: <業務サマリ + 呼び出し基準>` / `tools: Read, Edit, Write, Glob, Grep`（必要最小限）/ **`model: sonnet` 固定**
+        - 本文は短く。「まず `<日本語ディレクトリ>/CLAUDE.md` を Read して詳細ルールを確認してから作業を開始する」旨を明記
+     2. `<日本語ディレクトリ>/CLAUDE.md`（詳細ルール）
+        - そのディレクトリで扱うファイル構成、定型業務の手順、入出力、禁止事項、出力フォーマット
+        - `<日本語ディレクトリ>/.gitkeep` 等を置いてディレクトリ自体を確保
+   - **`.claude/.onboarding.json` を更新**: `status: "completed"`, `completedAt`（ISO8601）, `department: { "id": "...", "name": "..." }`, `agents: [{ "id": "...", "name": "...", "dir": "..." }, ...]`
 7. 「Onboarding 完了」と宣言し、**Next Actions をユーザーに提示**:
-   - 各機能サブエージェントを呼び出す依頼例を 1〜2 件ずつ（例: 「先月分の経費レポートを集計して」→ `monthly-expense` が起動）
+   - 各機能サブエージェントを呼び出す依頼例を 1〜2 件ずつ（例: 「新入社員の ID を棚卸しして」→ `id-management` が起動し `ID管理/CLAUDE.md` を読んで作業）
    - 使えるモード: `/plan`（計画）・`acceptEdits`（編集自動承認）の使い分け、`/help` でコマンド一覧
-   - 機密ファイル（.env, *.pem, credentials 等）は自動ブロック、削除系コマンドは承認プロンプトが出る
-   - 機能テンプレの見直しは `.claude/agents/<task-id>.md` を直接編集すれば反映
+   - 機密ファイル（*.pem, credentials 等）は自動ブロック、削除系コマンドは承認プロンプトが出る
+   - ルーティング定義の微調整は `.claude/agents/<id>.md`、業務ルール追記は `<日本語ディレクトリ>/CLAUDE.md` を直接編集
    - Onboarding をやり直したいときは `.claude/.onboarding.json` の `status` を `pending` に戻して `claude --permission-mode plan` で再起動
 
-### Onboarding 完了後の CLAUDE.md ひな形
+### Onboarding 完了後のルート CLAUDE.md ひな形
 
 ```markdown
 # <部門名> AI オーケストレーター（<dept-id>）
@@ -78,9 +94,17 @@ Onboarding が未完のうちは下の `初回 Onboarding` セクションの手
 
 ## 委任ルール
 
-- <task-id-1>: <1 行サマリ> — 該当する依頼（例: 〇〇）は **@<task-id-1>** に委任
-- <task-id-2>: ...
-  （機能サブエージェントごとに列挙）
+ユーザー
+  ↓
+オーケストレーター（このファイル）
+  ↓ 自動ルーティング（.claude/agents/ の description を参照）
+  ├── <日本語名-1>担当エージェント (@<id-1>) → <日本語ディレクトリ-1>/CLAUDE.md
+  ├── <日本語名-2>担当エージェント (@<id-2>) → <日本語ディレクトリ-2>/CLAUDE.md
+  └── ...
+
+委任基準（例）:
+- <業務キーワード-1> に関する依頼は **@<id-1>** に委任
+- <業務キーワード-2> に関する依頼は **@<id-2>** に委任
 
 ## 基本ルール
 （オリジナルの基本ルールをそのまま転記）
@@ -91,7 +115,8 @@ Onboarding が未完のうちは下の `初回 Onboarding` セクションの手
 ## このディレクトリの構成
 
 - `CLAUDE.md` … このファイル（部門オーケストレーター）
-- `.claude/agents/<task-id>.md` … 機能担当サブエージェント（Onboarding で生成）
+- `.claude/agents/<id>.md` … 機能サブエージェントのルーティング定義（Onboarding で生成）
+- `<日本語ディレクトリ>/CLAUDE.md` … 機能サブエージェントの詳細運用ルール（Onboarding で生成）
 - `.claude/settings.json` … セキュリティ設定 + ステータスライン
 - `.claude/hooks/secret-guard.js` … プロンプト入力時の機密検知
 - `.claude/statusline.js` … 利用状況表示
@@ -100,7 +125,7 @@ Onboarding が未完のうちは下の `初回 Onboarding` セクションの手
 ## 困ったら
 
 - `/help` で Claude Code のコマンド一覧
-- 機能サブエージェントの追加・編集は `.claude/agents/<task-id>.md` を直接編集
+- 機能サブエージェントの追加・編集はルーティング定義 `.claude/agents/<id>.md` と業務ルール `<日本語ディレクトリ>/CLAUDE.md` をそれぞれ編集
 - Onboarding をやり直したい場合は `.claude/.onboarding.json` の `status` を `pending` に戻して `claude --permission-mode plan` を再起動
 - 不具合は社内窓口（またはリポジトリの Issues）へ
 ```
