@@ -138,25 +138,25 @@ Set-Location $TargetDir
 
 $OnboardingPrompt = @'
 【初回 Onboarding — Plan モード】
-コーポレート部向け Claude Code 設定の対話仕上げを行います。CLAUDE.md の「初回 Onboarding」セクションの手順に従って進めてください。
+CLAUDE.md の「初回 Onboarding」セクションの手順に従って、部門と機能サブエージェントを確定させてください。
 
-**重要: ユーザーへの質問はすべて `AskUserQuestion` ツールを使ってください**（平文ではなく構造化 UI で提示）。自由記述が要るものは選択肢に「その他（自由記述）」を含めること。複数項目は 1 回の呼び出しで `questions` 配列にまとめる。
+前提（解釈 A: 1 インストール = 1 部門）:
+- ルート CLAUDE.md は「<部門名> AI オーケストレーター」として書き換える
+- 聞き取った定型業務 1 件ごとに `.claude/agents/<task-id>.md` のサブエージェントを作成する
+
+**重要: ユーザーへの質問はすべて `AskUserQuestion` ツール**を使う（自由記述必要な項目は「その他（自由記述）」を含め、複数項目は 1 回の呼び出しで `questions` 配列にまとめる）。
 
 概要:
-1. 導入する部門をヒアリング（既定: 経理/労務/総務/人事/採用。「その他」として任意追加可。id は英小文字ハイフン）— AskUserQuestion の複数選択で提示
-2. 選ばれた各部門について、扱うファイル構成・定型業務・禁止操作・利用ツール・出力フォーマットを AskUserQuestion で 1 セットにまとめて質問
-3. 既定部門は `templates/agents/<id>.md` を Read して参考にする。「その他」は新規作成
-4. `ExitPlanMode` で最終プランを提示し、私の承認を得る
-5. 承認後、以下を書き込む:
-   - `.claude/agents/<id>.md` を作成（frontmatter の model は必ず `sonnet`）
-   - `CLAUDE.md` の `<!-- BEGIN:DEPARTMENTS -->` / `<!-- END:DEPARTMENTS -->` 間を部門リストで置換
-   - `.claude/.onboarding.json` を `status: "completed"`, `completedAt`, `departments` で更新
-6. **`CLAUDE.md` の `<!-- BEGIN:ONBOARDING -->` から `<!-- END:ONBOARDING -->` までをセクションごと削除**
-7. 「Onboarding 完了」を宣言し、**Next Actions を提示**:
-   - 各部門への依頼例 2〜3 件
-   - `/plan`・`acceptEdits` モードの使い分け、`/help` の案内
-   - 機密ブロック・削除系承認プロンプトの挙動
-   - 部門テンプレ再編集（`.claude/agents/<id>.md`）、Onboarding 再実行方法
+1. 部門を 1 つだけ選ぶ（単一選択）。候補は 経理/労務/総務/人事/採用 ＋ その他（id + 表示名を追加質問）
+2. 部門コンテキスト（ファイル構成・禁止操作・利用ツール・出力フォーマット）を 1 セットにまとめて聞き取る
+3. 定型業務 3〜5 件を洗い出す（既定部門なら `templates/agents/<id>.md` を参考に候補を提示してよい）
+4. 各定型業務について id / 要約 / 入出力 / 手順のツボを聞き取る
+5. `ExitPlanMode` で承認を得る
+6. 承認後に書き込む:
+   - ルート `CLAUDE.md` を「<部門名> AI オーケストレーター」として全面書き換え（委任ルールに機能サブエージェントを列挙、`<!-- BEGIN:ONBOARDING -->` 〜 `<!-- END:ONBOARDING -->` は削除）
+   - 機能サブエージェントを `.claude/agents/<task-id>.md` に作成（frontmatter の model は必ず `sonnet`）
+   - `.claude/.onboarding.json` を `status: "completed"`, `completedAt`, `department`, `tasks` で更新
+7. 「Onboarding 完了」を宣言し、Next Actions を提示（各機能サブエージェントへの依頼例・モード運用・機密ブロック挙動・再編集方法・Onboarding 再実行方法）
 
 スラッシュコマンドは作成しないでください。それでは step 1 の質問から始めてください。
 '@
