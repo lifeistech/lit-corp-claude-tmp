@@ -1,17 +1,10 @@
 {
   "name": "lit-corp-claude-tmp",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Corporate back-office setup template for Claude Code (Mac/Windows)",
   "private": true,
   "engines": {
     "node": ">=18"
-  },
-  "bin": {
-    "lit-corp-claude-tmp-setup": "./setup.js"
-  },
-  "scripts": {
-    "setup": "node setup.js",
-    "setup:dry": "node setup.js --target /tmp/lit-test --depts accounting,hr --model sonnet --commands --non-interactive"
   },
   "license": "UNLICENSED"
 }

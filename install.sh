@@ -1,18 +1,15 @@
 #!/usr/bin/env bash
 # lit-corp-claude-tmp installer (macOS / Linux)
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/<org>/lit-corp-claude-tmp/main/install.sh | bash
+#   bash -c "$(curl -fsSL https://raw.githubusercontent.com/lifeistech/lit-corp-claude-tmp/main/install.sh)"
 #
-# このスクリプトは未導入の場合に以下を自動インストールします:
-#   - Homebrew (sudo パスワード入力を求められます。Mac のログインパスワードを入力してください)
-#   - Node.js LTS (brew 経由)
-#   - git (brew 経由)
+# 実行内容:
+#   1. Homebrew / Node.js / git / Claude Code を必要に応じて自動インストール
+#   2. テンプレートを clone
+#   3. .claude/ 設定一式 と CLAUDE.md / .gitignore を展開（部門選定は行わない）
+#   4. claude を plan モードで自動起動し Onboarding フローへ
 set -euo pipefail
 
-# `curl -fsSL URL | bash` で呼ばれた場合、stdin は curl の pipe で占有されていて
-# 対話プロンプト（sudo パスワード、setup.js の部門選択など）が入力を受け取れない。
-# stdin が tty でなく /dev/tty が読めるなら、このスクリプト全体の stdin を tty に
-# 切り替える。CI やコンテナで tty が無い場合はそのまま（非対話フラグで対処）。
 if [ ! -t 0 ] && [ -r /dev/tty ]; then
   exec 0</dev/tty
 fi
@@ -35,10 +32,8 @@ case "$UNAME_S" in
   *)       err "未対応の OS: $UNAME_S"; exit 1 ;;
 esac
 
-# ---------- Homebrew bootstrap (Mac only, if needed) ----------
 ensure_brew_path() {
   if command -v brew >/dev/null 2>&1; then return 0; fi
-  # Apple Silicon: /opt/homebrew, Intel: /usr/local
   if [ -x /opt/homebrew/bin/brew ]; then
     eval "$(/opt/homebrew/bin/brew shellenv)"
   elif [ -x /usr/local/bin/brew ]; then
@@ -48,11 +43,11 @@ ensure_brew_path() {
 
 install_brew() {
   if [ "$OS_KIND" != "mac" ]; then
-    err "Linux 環境では自動 brew 導入は行いません。apt/yum 等でお手元の node と git を先に入れてから再実行してください"
+    err "Linux 環境では自動 brew 導入は行いません。apt/yum 等で node と git を先に入れてから再実行してください"
     exit 1
   fi
   cecho "Homebrew を自動インストールします"
-  warn  "このあと sudo パスワード入力を求められます（Mac のログインパスワードを入力してください）"
+  warn  "sudo パスワード入力を求められます（Mac のログインパスワード）"
   NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
   ensure_brew_path
   if ! command -v brew >/dev/null 2>&1; then
@@ -64,7 +59,6 @@ install_brew() {
 
 ensure_brew_path
 
-# ---------- Node.js ----------
 ensure_node() {
   if command -v node >/dev/null 2>&1; then
     local v
@@ -82,7 +76,6 @@ ensure_node() {
   cecho "Node.js 導入完了: $(node -v)"
 }
 
-# ---------- git ----------
 ensure_git() {
   if command -v git >/dev/null 2>&1; then
     cecho "git 確認: $(git --version)"
@@ -118,7 +111,55 @@ else
   git clone --depth 1 --branch "$BRANCH" "$REPO_URL" "$TARGET_DIR"
 fi
 
-# ---------- Launch setup ----------
-cecho "対話セットアップを起動します"
+# ---------- Bootstrap files ----------
+cecho "設定ファイルを展開します（部門は Onboarding でヒアリング）"
+mkdir -p "$TARGET_DIR/.claude/hooks"
+cp "$TARGET_DIR/templates/settings.json"        "$TARGET_DIR/.claude/settings.json"
+cp "$TARGET_DIR/templates/statusline.js"        "$TARGET_DIR/.claude/statusline.js"
+cp "$TARGET_DIR/templates/hooks/secret-guard.js" "$TARGET_DIR/.claude/hooks/secret-guard.js"
+
+# CLAUDE.md は既存があっても上書き（.bak を残す）
+if [ -f "$TARGET_DIR/CLAUDE.md" ]; then
+  cp "$TARGET_DIR/CLAUDE.md" "$TARGET_DIR/CLAUDE.md.bak"
+fi
+cp "$TARGET_DIR/templates/CLAUDE.md.tmpl" "$TARGET_DIR/CLAUDE.md"
+
+# .gitignore は強制作成（既存がある場合も上書き）
+if [ -f "$TARGET_DIR/.gitignore" ]; then
+  cp "$TARGET_DIR/.gitignore" "$TARGET_DIR/.gitignore.bak"
+fi
+cp "$TARGET_DIR/templates/gitignore.template" "$TARGET_DIR/.gitignore"
+
+# Onboarding marker
+cat > "$TARGET_DIR/.claude/.onboarding.json" <<EOF
+{
+  "createdAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+  "status": "pending",
+  "model": "sonnet"
+}
+EOF
+
+# ---------- Launch claude in plan mode ----------
 cd "$TARGET_DIR"
-exec node "$TARGET_DIR/setup.js" "$@"
+
+ONBOARDING_PROMPT=$(cat <<'PROMPT'
+【初回 Onboarding — Plan モード】
+コーポレート部向け Claude Code 設定の対話仕上げを行います。CLAUDE.md の「初回 Onboarding」セクションの手順に従って進めてください。
+
+概要:
+1. 導入する部門をヒアリング（既定: 経理/労務/総務/人事/採用。「その他」として任意追加可。id は英小文字ハイフン）
+2. 選ばれた各部門について、扱うファイル構成・定型業務・禁止操作・利用ツール・出力フォーマットを聞き取る
+3. 既定部門は `templates/agents/<id>.md` を Read して参考にする。「その他」は新規作成
+4. `ExitPlanMode` で最終プランを提示し、私の承認を得る
+5. 承認後、以下を書き込む:
+   - `.claude/agents/<id>.md` を作成（frontmatter の model は必ず `sonnet`）
+   - `CLAUDE.md` の `<!-- BEGIN:DEPARTMENTS -->` / `<!-- END:DEPARTMENTS -->` 間を部門リストで置換
+   - `.claude/.onboarding.json` を `status: "completed"`, `completedAt`, `departments` で更新
+6. 「Onboarding 完了」を宣言
+
+スラッシュコマンドは作成しないでください。それでは step 1 の質問から始めてください。
+PROMPT
+)
+
+cecho "claude を plan モードで起動します"
+exec claude --permission-mode plan "$ONBOARDING_PROMPT"

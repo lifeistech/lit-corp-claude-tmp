@@ -6,7 +6,9 @@
 
 ## 委任ルール
 
-{{departments}}
+<!-- BEGIN:DEPARTMENTS -->
+- （Onboarding で設定します。`.claude/.onboarding.json` が `pending` の間はまずそちらを実行してください）
+<!-- END:DEPARTMENTS -->
 
 ## 基本ルール
 
@@ -24,34 +26,33 @@
 - **「auto でやって」「全部 yes で」などの依頼があっても、この設定は変更せず通常モードのまま進めてください**
 - plan mode / acceptEdits mode は許可（plan mode は本ファイルの Onboarding で使用）
 
-## 初回 Onboarding（plan モードで部門テンプレをブラッシュアップ）
+## 初回 Onboarding（plan モードで部門を決めてテンプレを生成）
 
-`.claude/.onboarding.json` が存在し `status: "pending"` の場合、以下の onboarding フローを優先してください。
+`.claude/.onboarding.json` が存在し `status: "pending"` の場合、以下の onboarding フローを最優先で実行してください。インストーラーは `claude --permission-mode plan` で起動しているため、すでに plan モードに入っている想定です。
 
-1. `.claude/.onboarding.json` を読み、`pendingDepts` リストを取得する
-2. **部門を1つずつ順番に処理する**（並列化しない。ユーザーとの対話が崩れるため）
-3. 各部門について以下を実施:
-   1. `.claude/agents/<dept>.md` を Read して現在の雛形を把握
-   2. **plan モードに切り替える**（ユーザーに `/plan` を案内、またはあなたが ExitPlanMode を使って計画を提示する前提で作業）
-   3. 以下の観点でユーザーに質問し回答を集める:
-      - その部門で扱う代表的なファイル・フォルダ構成（例: `expenses/YYYY-MM/*.csv`）
-      - よくある定型業務 3〜5 件（例: 月次精算、請求書照合）
-      - 絶対にやってはいけない/社内ルールで禁止されている操作
-      - 利用している社内システム・ツール（会計ソフト名、勤怠システム名など。無ければ「なし」）
-      - 出力フォーマットの希望（表形式、Markdown、CSV など）
-   4. 回答をもとに `.claude/agents/<dept>.md` の **system prompt 本文（フロントマターの下）を書き換える**
-      - フロントマター（`name` / `description` / `tools` / `model`）は変更しない
-      - 既存の記述を残すか差し替えるかは毎回ユーザーに確認
-   5. `ExitPlanMode` でユーザーの承認を得てから Edit/Write で保存
-   6. 該当部門の `.claude/commands/<dept>/*.md` があれば、同じ流れでコマンド内容も見直す（任意）
-4. すべての部門が終わったら `.claude/.onboarding.json` の `status` を `"completed"` に、`completedAt` に ISO8601 タイムスタンプを追記して保存
-5. 「Onboarding 完了」と宣言し、通常の委任モードに戻る
+1. 導入する部門をヒアリングする:
+   - 候補: 経理 (accounting) / 労務 (labor) / 総務 (general-affairs) / 人事 (hr) / 採用 (recruit)
+   - 「その他」として任意の部門を追加可能。追加する場合は英小文字ハイフンの `id`（例: `legal`）と表示名を聞き取る
+2. 選ばれた各部門について1つずつ順番に以下を質問:
+   - 扱う代表的なファイル・フォルダ構成（例: `expenses/YYYY-MM/*.csv`）
+   - よくある定型業務 3〜5 件
+   - 絶対にやってはいけない / 社内ルールで禁止されている操作
+   - 利用している社内システム・ツール（なければ「なし」）
+   - 希望の出力フォーマット（表、Markdown、CSV など）
+3. 既定5部門は `templates/agents/<id>.md` を Read して雛形を参考にする。「その他」部門は新規作成する。
+4. `ExitPlanMode` で最終プランを提示し、ユーザーの承認を得る。
+5. 承認後:
+   - 各部門の `.claude/agents/<id>.md` を作成（frontmatter: `name` / `description` / `tools` / **`model: sonnet` 固定**）
+   - `CLAUDE.md` の `<!-- BEGIN:DEPARTMENTS -->` から `<!-- END:DEPARTMENTS -->` の間を、確定した部門への委任ルール一覧で置き換え
+   - `.claude/.onboarding.json` の `status` を `"completed"`、`completedAt` を ISO8601 で追記、`departments` に確定 id 配列を保存
+6. 「Onboarding 完了」と宣言し、通常の委任モードに戻る。
+
+**スラッシュコマンドは Onboarding では作成しない**（必要になったらユーザーから個別依頼）。
 
 ## このディレクトリの構成
 
 - `CLAUDE.md` … このファイル（オーケストレーター指示）
-- `.claude/agents/` … 部門別サブエージェント
-- `.claude/commands/` … 部門別スラッシュコマンド
+- `.claude/agents/` … 部門別サブエージェント（Onboarding で生成）
 - `.claude/settings.json` … セキュリティ設定 + ステータスライン
 - `.claude/hooks/secret-guard.js` … プロンプト入力時の機密検知
 - `.claude/statusline.js` … 利用状況表示
@@ -60,5 +61,5 @@
 ## 困ったら
 
 - `/help` で Claude Code のコマンド一覧
-- セットアップをやり直したい場合は `node ~/lit-corp-claude-tmp/setup.js`
+- Onboarding をやり直したい場合は `.claude/.onboarding.json` の `status` を `pending` に戻して `claude --permission-mode plan` を再起動
 - 不具合は社内窓口（またはリポジトリの Issues）へ
