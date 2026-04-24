@@ -77,7 +77,7 @@ Claude が plan モードで起動した後、以下を順に実行します。
 | --- | --- |
 | **auto mode / bypassPermissions mode の利用禁止** | `permissions.disableAutoMode: "disable"` + `permissions.disableBypassPermissionsMode: "disable"` |
 | 起動モードの固定 | `permissions.defaultMode: "default"` |
-| `.env` / `*.pem` / `*.key` / `credentials*` の Read/Edit | `settings.json` の `permissions.deny` |
+| `*.pem` / `*.key` / `credentials*` / `id_rsa*` など秘密鍵・シークレットファイルの Read/Edit | `settings.json` の `permissions.deny`（`.env` は Read/Edit 許可、`.gitignore` でコミット除外のみ） |
 | 削除・上書き系 (`rm`, `mv`, `Edit`, `Write`, `git push`, `git reset --hard` 等) | `permissions.ask` で承認必須化 |
 | プロンプトへの APIキー混入（Anthropic / OpenAI / AWS / GitHub / Google / Slack / PEM 等） | `UserPromptSubmit` hook で exit 2 ブロック |
 | 危険な `curl \| bash` などのパイプ実行 | `permissions.deny` |
