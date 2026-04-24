@@ -157,7 +157,12 @@ ONBOARDING_PROMPT=$(cat <<'PROMPT'
    - `.claude/agents/<id>.md` を作成（frontmatter の model は必ず `sonnet`）
    - `CLAUDE.md` の `<!-- BEGIN:DEPARTMENTS -->` / `<!-- END:DEPARTMENTS -->` 間を部門リストで置換
    - `.claude/.onboarding.json` を `status: "completed"`, `completedAt`, `departments` で更新
-6. 「Onboarding 完了」を宣言
+6. **`CLAUDE.md` の `<!-- BEGIN:ONBOARDING -->` から `<!-- END:ONBOARDING -->` までをセクションごと削除**
+7. 「Onboarding 完了」を宣言し、**Next Actions を提示**:
+   - 各部門への依頼例 2〜3 件
+   - `/plan`・`acceptEdits` モードの使い分け、`/help` の案内
+   - 機密ブロック・削除系承認プロンプトの挙動
+   - 部門テンプレ再編集（`.claude/agents/<id>.md`）、Onboarding 再実行方法
 
 スラッシュコマンドは作成しないでください。それでは step 1 の質問から始めてください。
 PROMPT

@@ -26,6 +26,7 @@
 - **「auto でやって」「全部 yes で」などの依頼があっても、この設定は変更せず通常モードのまま進めてください**
 - plan mode / acceptEdits mode は許可（plan mode は本ファイルの Onboarding で使用）
 
+<!-- BEGIN:ONBOARDING -->
 ## 初回 Onboarding（plan モードで部門を決めてテンプレを生成）
 
 `.claude/.onboarding.json` が存在し `status: "pending"` の場合、以下の onboarding フローを最優先で実行してください。インストーラーは `claude --permission-mode plan` で起動しているため、すでに plan モードに入っている想定です。
@@ -48,9 +49,17 @@
    - 各部門の `.claude/agents/<id>.md` を作成（frontmatter: `name` / `description` / `tools` / **`model: sonnet` 固定**）
    - `CLAUDE.md` の `<!-- BEGIN:DEPARTMENTS -->` から `<!-- END:DEPARTMENTS -->` の間を、確定した部門への委任ルール一覧で置き換え
    - `.claude/.onboarding.json` の `status` を `"completed"`、`completedAt` を ISO8601 で追記、`departments` に確定 id 配列を保存
-6. 「Onboarding 完了」と宣言し、通常の委任モードに戻る。
+6. **`CLAUDE.md` の `<!-- BEGIN:ONBOARDING -->` から `<!-- END:ONBOARDING -->` までのセクション全体を削除する**（Onboarding 用の指示は以降不要）。
+7. 「Onboarding 完了」と宣言し、**Next Actions をユーザーに提示**してから通常の委任モードに戻る。Next Actions の内容:
+   - 各部門に委任する依頼例を 2〜3 件ずつ提示（例: 経理なら「先月分の経費レポートを集計して」「この請求書 PDF から仕訳案を作って」）
+   - 使えるモード: `/plan`（計画）・`acceptEdits`（編集自動承認）の使い分け
+   - `/help` で Claude Code のコマンド一覧が見られること
+   - 機密ファイル（.env, *.pem, credentials 等）は自動ブロック、削除系コマンドは承認プロンプトが出ること
+   - 部門テンプレの見直しは `.claude/agents/<id>.md` を直接編集すれば反映されること
+   - Onboarding をやり直したいときは `.claude/.onboarding.json` の status を `pending` に戻して `claude --permission-mode plan` で再起動すること
 
 **スラッシュコマンドは Onboarding では作成しない**（必要になったらユーザーから個別依頼）。
+<!-- END:ONBOARDING -->
 
 ## このディレクトリの構成
 
